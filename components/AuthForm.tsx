@@ -7,6 +7,7 @@ import Image from 'next/image'
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
 import {
   Form,
   FormControl,
@@ -20,9 +21,11 @@ import { Input } from "@/components/ui/input"
 import CustomInputs from "./CustomInputs"
 import { authFormSchema } from "@/lib/utils"
 import { Loader2 } from "lucide-react"
+import { signIn, signUp } from "@/lib/actions/user.action"
 
 
 const AuthForm = ({ type }:{ type: string }) => {
+  const router = useRouter()
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(false)
 
@@ -37,12 +40,29 @@ const AuthForm = ({ type }:{ type: string }) => {
   })
 
   // 2. Define a submit handler.
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
+  const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setIsLoading(true)
-    console.log(values)
-    setIsLoading(false)
+    
+    try {
+      if(type === 'sign-up') {
+        const newUser = await signUp(data);
+
+        setUser(newUser);
+      }
+
+      if(type === 'sign-up') {
+        const response = await signIn({
+          email: data.email,
+          password: data.password,
+        })
+
+        if (response) router.push('/')
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -100,6 +120,13 @@ const AuthForm = ({ type }:{ type: string }) => {
                     name="address1"
                     label="Address"
                     placeholder="Enter your specific address"
+                  />
+
+                  <CustomInputs
+                    control={form.control}
+                    name="city"
+                    label="City"
+                    placeholder="Enter your City"
                   />
 
                   <div className="flex gap-4">
